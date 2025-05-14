@@ -248,6 +248,9 @@
                   <Image iconType="3" name="/assets/penyewaan/Button Nota Select.png"/>
                 </Property>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_notaActionPerformed"/>
+              </Events>
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_InitCodePre" type="java.lang.String" value="btn_nota.setContentAreaFilled(false);&#xa;&#xa;btn_nota.setBorderPainted(false);"/>
               </AuxValues>

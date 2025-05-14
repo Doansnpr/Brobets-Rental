@@ -7,8 +7,20 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.JTextArea;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
 
 public class MenuPenyewaan extends javax.swing.JPanel {
 
@@ -420,6 +432,11 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         btn_nota.setBorder(null);
         btn_nota.setContentAreaFilled(false);
         btn_nota.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/penyewaan/Button Nota Select.png"))); // NOI18N
+        btn_nota.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_notaActionPerformed(evt);
+            }
+        });
         page_penyewaan.add(btn_nota, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 170, -1, 40));
 
         jLabel12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/penyewaan/BG Button.png"))); // NOI18N
@@ -899,7 +916,26 @@ public class MenuPenyewaan extends javax.swing.JPanel {
     }//GEN-LAST:event_no_hpActionPerformed
 
     private void btn_detailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_detailActionPerformed
-       
+      int selectedRow = table_sewa.getSelectedRow();
+        if (selectedRow != -1) {
+            String idSewa = table_sewa.getValueAt(selectedRow, 0).toString();
+
+            // Buat panel dan kirim idSewa ke konstruktor
+            PanelDetailSewa panel = new PanelDetailSewa(idSewa);
+
+            // Bungkus panel ke dalam JDialog
+            JDialog dialog = new JDialog();
+            dialog.setTitle("Detail Sewa");
+            dialog.setModal(true);
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            dialog.getContentPane().add(panel);
+            dialog.pack();
+            dialog.setLocationRelativeTo(null); // center screen
+            dialog.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Pilih data penyewaan terlebih dahulu.");
+        }
+
     }//GEN-LAST:event_btn_detailActionPerformed
 
     private void btn_calenderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_calenderActionPerformed
@@ -1259,6 +1295,140 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         page_main.repaint();
         page_main.revalidate();
     }//GEN-LAST:event_btn_back9ActionPerformed
+
+    private void btn_notaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_notaActionPerformed
+    
+    int selectedRow = table_sewa.getSelectedRow();
+
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this, "Pilih data penyewaan yang ingin dicetak.");
+        return;
+    }
+
+    try {
+        String idSewa = table_sewa.getValueAt(selectedRow, 0).toString();
+
+        // Ambil data penyewaan
+        String sqlSewa = "SELECT p.tgl_sewa, p.tgl_rencana_kembali, pl.nama_pelanggan, pl.no_hp, p.jaminan " +
+                         "FROM penyewaan p JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan " +
+                         "WHERE p.id_sewa = ?";
+        PreparedStatement psSewa = con.prepareStatement(sqlSewa);
+        psSewa.setString(1, idSewa);
+        ResultSet rsSewa = psSewa.executeQuery();
+
+        if (!rsSewa.next()) {
+            JOptionPane.showMessageDialog(this, "Data penyewaan tidak ditemukan.");
+            return;
+        }
+
+        String tglPinjam = rsSewa.getString("tgl_sewa");
+        String tglKembali = rsSewa.getString("tgl_rencana_kembali");
+        String nama = rsSewa.getString("nama_pelanggan");
+        String noHp = rsSewa.getString("no_hp");
+        String jaminan = rsSewa.getString("jaminan");
+
+        // Ambil data detail sewa
+        String sqlDetail = "SELECT b.nama_barang, ds.qty, b.harga_sewa " +
+                           "FROM detail_sewa ds JOIN barang b ON ds.id_barang = b.id_barang " +
+                           "WHERE ds.id_sewa = ?";
+        PreparedStatement psDetail = con.prepareStatement(sqlDetail);
+        psDetail.setString(1, idSewa);
+        ResultSet rsDetail = psDetail.executeQuery();
+
+        int total = 0;
+        StringBuilder detailBarang = new StringBuilder();
+        while (rsDetail.next()) {
+            String namaBarang = rsDetail.getString("nama_barang");
+            int qty = rsDetail.getInt("qty");
+            int harga = rsDetail.getInt("harga_sewa");
+            int subTotal = qty * harga;
+            total += subTotal;
+
+            detailBarang.append(String.format("%-15s x%d  Rp%,d\n", namaBarang, qty, harga));
+        }
+
+        // Ambil data bayar dan kembalian
+        String sqlBayar = "SELECT bayar, kembalian FROM penyewaan WHERE id_sewa = ?";
+        PreparedStatement psBayar = con.prepareStatement(sqlBayar);
+        psBayar.setString(1, idSewa);
+        ResultSet rsBayar = psBayar.executeQuery();
+
+        String bayar = "0", kembalian = "0";
+        if (rsBayar.next()) {
+            bayar = String.format("Rp%,d", rsBayar.getInt("bayar"));
+            kembalian = String.format("Rp%,d", rsBayar.getInt("kembalian"));
+        }
+
+        // Buat isi struk
+        StringBuilder struk = new StringBuilder();
+        struk.append("Jl. Gajah Mada Gg. Buntu No. 2\n");
+        struk.append("(Barat Bank Danamon)Jember-Jawa Timur\n");
+        struk.append("WA Only (No Call/SMS) 0821 3191 2829\n");
+        struk.append("IG : brobet_jbr | Kode Pos. 68131\n");
+        struk.append("-----------------------------\n");
+        struk.append("Nama       : ").append(nama).append("\n");
+        struk.append("No HP      : ").append(noHp).append("\n");
+        struk.append("Tgl Pinjam : ").append(tglPinjam).append("\n");
+        struk.append("Tgl Kembali: ").append(tglKembali).append("\n");
+        struk.append("Jaminan    : ").append(jaminan).append("\n");
+        struk.append("-----------------------------\n");
+        struk.append("BARANG SEWA:\n");
+        struk.append(detailBarang);
+        struk.append("-----------------------------\n");
+        struk.append(String.format("TOTAL     : Rp%,d\n", total));
+        struk.append("BAYAR     : " + bayar + "\n");
+        struk.append("KEMBALIAN : " + kembalian + "\n");
+        struk.append("-----------------------------\n");
+        struk.append("TERIMAKASIH SUDAH MENYEWA!\n");
+
+        BufferedImage logo = ImageIO.read(getClass().getResource("/assets/logo (2).png"));
+
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPrintable(new Printable() {
+            @Override
+            public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+                if (pageIndex >= 1) {
+                    return NO_SUCH_PAGE;
+                }
+
+                Graphics2D g2d = (Graphics2D) graphics;
+                g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+
+                // Gambar logo di bagian atas
+                g2d.drawImage(logo, 0, 0, 100, 100, null);
+
+                // Gambar teks
+                g2d.setFont(new Font("Monospaced", Font.PLAIN, 10));
+                g2d.setColor(Color.BLACK);
+                int y = 120; // Mulai setelah logo
+                for (String line : struk.toString().split("\n")) {
+                    g2d.drawString(line, 0, y);
+                    y += g2d.getFontMetrics().getHeight(); // Geser ke bawah per baris
+                }
+
+
+                return PAGE_EXISTS;
+            }
+        });
+
+       try {
+            if (job.printDialog()) {
+                job.print();
+                JOptionPane.showMessageDialog(this, "Struk berhasil dicetak!");
+            } else {
+                JOptionPane.showMessageDialog(this, "Pencetakan dibatalkan.");
+            }
+        } catch (PrinterException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Struk batal dicetak: " + e.getMessage());
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Gagal mencetak nota: " + e.getMessage());
+    }
+
+    }//GEN-LAST:event_btn_notaActionPerformed
 
 
 

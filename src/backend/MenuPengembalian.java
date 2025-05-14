@@ -2,6 +2,10 @@
 package backend;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import javax.swing.table.DefaultTableModel;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +15,7 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import java.awt.print.*;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class MenuPengembalian extends javax.swing.JPanel {
@@ -125,7 +130,7 @@ public class MenuPengembalian extends javax.swing.JPanel {
     public void cetakNota(String idPengembalian) {
     try {
         StringBuilder struk = new StringBuilder();
-        
+
         // Ambil data pengembalian
         String sql = "SELECT p.id_kembali, p.id_sewa, p.tgl_kembali, p.status, p.denda_keterlambatan, p.total_denda, pg.nama_lengkap " +
                      "FROM pengembalian p JOIN penyewaan s ON p.id_sewa = s.id_sewa " +
@@ -161,13 +166,13 @@ public class MenuPengembalian extends javax.swing.JPanel {
         while (rs.next()) {
             struk.append("- ").append(rs.getString("nama_barang")).append(" (x").append(rs.getInt("jumlah")).append(")\n");
             struk.append("  Kondisi: ").append(rs.getString("kondisi")).append("\n");
-            struk.append("  Denda : Rp ").append(rs.getInt("denda_barang")).append("\n");
+            struk.append("  Denda  : Rp ").append(rs.getInt("denda_barang")).append("\n");
         }
 
         rs.close();
         pst.close();
 
-        // Ambil total denda terakhir
+        // Ambil total denda
         pst = con.prepareStatement("SELECT total_denda FROM pengembalian WHERE id_kembali = ?");
         pst.setString(1, idPengembalian);
         rs = pst.executeQuery();
@@ -182,11 +187,52 @@ public class MenuPengembalian extends javax.swing.JPanel {
         rs.close();
         pst.close();
 
-        // Tampilkan dan cetak
-        JTextArea textArea = new JTextArea(struk.toString());
-        textArea.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-        boolean done = textArea.print();
-        if (done) {
+        // Load logo
+        BufferedImage logo = ImageIO.read(getClass().getResource("/assets/logo (2).png"));
+
+        // Set printer job
+        PrinterJob job = PrinterJob.getPrinterJob();
+
+        // Set ukuran kertas 80mm x panjang bebas (panjang akan otomatis disesuaikan)
+        PageFormat pf = job.defaultPage();
+        Paper paper = pf.getPaper();
+        double width = 80 * 2.83; // 80mm dalam point (1mm = 2.83 point)
+        double height = 500; // panjang awal, bisa diatur sesuai kebutuhan
+        paper.setSize(width, height);
+        paper.setImageableArea(10, 10, width - 20, height - 20); // margin
+        pf.setPaper(paper);
+
+        // Set Printable dengan page format
+        job.setPrintable(new Printable() {
+            @Override
+            public int print(Graphics g, PageFormat pf, int pageIndex) throws PrinterException {
+                if (pageIndex > 0) return NO_SUCH_PAGE;
+
+                Graphics2D g2 = (Graphics2D) g;
+                g2.translate(pf.getImageableX(), pf.getImageableY());
+
+                int y = 0;
+
+                // Logo di atas
+                if (logo != null) {
+                    g2.drawImage(logo, 20, y, 80, 80, null); // ukuran logo disesuaikan
+                    y += 90; // jarak ke bawah
+                }
+
+                // Set font
+                g2.setFont(new Font("Monospaced", Font.PLAIN, 10));
+                for (String line : struk.toString().split("\n")) {
+                    g2.drawString(line, 0, y);
+                    y += 12;
+                }
+
+                return PAGE_EXISTS;
+            }
+        }, pf);
+
+        // Tampilkan dialog
+        if (job.printDialog()) {
+            job.print();
             JOptionPane.showMessageDialog(null, "Struk berhasil dicetak.");
         } else {
             JOptionPane.showMessageDialog(null, "Pencetakan dibatalkan.");
@@ -197,6 +243,8 @@ public class MenuPengembalian extends javax.swing.JPanel {
         e.printStackTrace();
     }
 }
+
+
     
     
     public void hitungDendaBarangKembali(int dendaKeterlambatan) {

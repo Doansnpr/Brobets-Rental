@@ -1,21 +1,69 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
- */
+
 package backend;
 
-/**
- *
- * @author USER
- */
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
+
 public class PanelDetailSewa extends javax.swing.JPanel {
 
-    /**
-     * Creates new form PanelDetailSewa
-     */
-    public PanelDetailSewa() {
+    Connection con;
+    PreparedStatement pst;
+    ResultSet rs;
+    
+    private String idSewa;
+    
+    
+    public PanelDetailSewa(String idSewa) {
         initComponents();
+        Koneksi DB = new Koneksi();
+        DB.config();
+        con = DB.con;
+        this.idSewa = idSewa;
+        loadDetailSewa(); // method untuk isi data dari idSewa
     }
+
+
+    
+    private void loadDetailSewa() {
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("No");
+        model.addColumn("Nama Barang");
+        model.addColumn("Harga Sewa");
+        model.addColumn("Jumlah");
+        model.addColumn("Subtotal");
+
+        int no = 1;
+
+        try {
+            String sql = "SELECT b.nama_barang, ds.qty, b.harga_sewa, ds.sub_total " +
+             "FROM detail_sewa ds " +
+             "JOIN barang b ON ds.id_barang = b.id_barang " +
+             "WHERE ds.id_sewa = ?";
+            pst = con.prepareStatement(sql);
+            pst.setString(1, idSewa);
+            rs = pst.executeQuery();
+
+            while (rs.next()) {
+                String namaBarang = rs.getString("nama_barang");
+                int jumlah = rs.getInt("harga_sewa");
+                double harga = rs.getDouble("qty");
+                double subtotal = rs.getDouble("sub_total");
+
+                model.addRow(new Object[]{
+                    no++, namaBarang, jumlah, harga, subtotal
+                });
+            }
+
+            table_detail.setModel(model);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Gagal load detail sewa: " + e.getMessage());
+        }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -28,7 +76,6 @@ public class PanelDetailSewa extends javax.swing.JPanel {
 
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        jButton2 = new javax.swing.JButton();
         panel2_custom1 = new custom.panel2_custom();
         jScrollPane1 = new javax.swing.JScrollPane();
         table_detail = new custom.JTable_custom();
@@ -38,10 +85,6 @@ public class PanelDetailSewa extends javax.swing.JPanel {
         jPanel1.setBackground(new java.awt.Color(255, 244, 232));
 
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/detailSewa/Detail Sewa.png"))); // NOI18N
-
-        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/detailSewa/Button X Select.png"))); // NOI18N
-        jButton2.setContentAreaFilled(false);
-        jButton2.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/detailSewa/Button X.png"))); // NOI18N
 
         panel2_custom1.setBackground(new java.awt.Color(204, 0, 0));
         panel2_custom1.setRoundBottomLeft(20);
@@ -86,8 +129,7 @@ public class PanelDetailSewa extends javax.swing.JPanel {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(0, 0, Short.MAX_VALUE)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 211, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(67, 67, 67)
-                .addComponent(jButton2))
+                .addGap(100, 100, 100))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(25, 25, 25)
                 .addComponent(panel2_custom1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -96,11 +138,8 @@ public class PanelDetailSewa extends javax.swing.JPanel {
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton2)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(20, 20, 20)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(20, 20, 20)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(panel2_custom1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(110, 110, 110))
@@ -111,7 +150,6 @@ public class PanelDetailSewa extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
