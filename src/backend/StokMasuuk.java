@@ -59,7 +59,7 @@ private void loadDataStokMasuk() {
     try {
         Koneksi.config();
         Connection conn = Koneksi.getConnection();
-        String sql = "SELECT sm.id_stok_masuk, b.nama_barang, sm.qty, sm.harga, sm.pemasok " +
+        String sql = "SELECT sm.id_stok_masuk, b.nama_barang, sm.qty, sm.harga, sm.id_pemasok " +
                      "FROM stok_masuk sm JOIN barang b ON sm.id_barang = b.id_barang";
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(sql);

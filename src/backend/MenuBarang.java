@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
- */
+
 package backend;
 
 import java.awt.Color;
@@ -35,20 +32,20 @@ public class MenuBarang extends javax.swing.JPanel {
 
     public MenuBarang() {
         initComponents();
+        populateStatusComboBox();
         EnumComboBoxLoader.loadEnumFromDatabase(cmb_status);
- populateStatusComboBox();
 
         // Buat combobox transparan
-    cmb_status.setOpaque(false);
-    cmb_status.setBackground(new Color(0, 0, 0, 0));
-    cmb_status.setForeground(Color.WHITE);
-    cmb_status.setBorder(null);
-    
-    //cmb_status1 transparan
-    cmb_status1.setOpaque(false);
-    cmb_status1.setBackground(new Color(0, 0, 0, 0));
-    cmb_status1.setForeground(Color.WHITE);
-    cmb_status1.setBorder(null);
+        cmb_status.setOpaque(false);
+        cmb_status.setBackground(new Color(0, 0, 0, 0));
+        cmb_status.setForeground(Color.WHITE);
+        cmb_status.setBorder(null);
+
+        //cmb_status1 transparan
+        cmb_status1.setOpaque(false);
+        cmb_status1.setBackground(new Color(0, 0, 0, 0));
+        cmb_status1.setForeground(Color.WHITE);
+        cmb_status1.setBorder(null);
     
     //buat dropdown transparan
     cmb_status.setRenderer(new DefaultListCellRenderer() {
@@ -131,7 +128,53 @@ public class MenuBarang extends javax.swing.JPanel {
         }
     }
 
-    
+    public void populateStatusComboBox() {
+    try {
+        // Koneksi ke database
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/brobets", "root", "");
+
+        // Query untuk mengambil status unik dari tabel barang
+        String query = "SELECT DISTINCT status FROM barang";
+        PreparedStatement stmt = con.prepareStatement(query);
+        ResultSet rs = stmt.executeQuery();
+
+        // Set untuk menyimpan status agar tidak duplikat
+        Set<String> statusSet = new HashSet<>();
+
+        // Menghapus item lama
+        cmb_status1.removeAllItems();
+
+        // Tambah status dari database
+        while (rs.next()) {
+            String status = rs.getString("status");
+            if (status != null) {
+                status = status.trim();
+                if (!status.isEmpty() && !statusSet.contains(status)) {
+                    statusSet.add(status);
+                    cmb_status1.addItem(status);
+                }
+            }
+        }
+
+        // Tambahkan status manual sebagai cadangan
+        String[] manualStatuses = { "Rusak", "Hilang", "Maintenance"};
+        for (String manualStatus : manualStatuses) {
+            if (!statusSet.contains(manualStatus)) {
+                statusSet.add(manualStatus);
+                cmb_status1.addItem(manualStatus);
+            }
+        }
+
+        // Tutup koneksi
+        rs.close();
+        stmt.close();
+        con.close();
+
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Kesalahan database: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
     
 public class EnumComboBoxLoader {
 
@@ -831,60 +874,7 @@ public class EnumComboBoxLoader {
     private void txt_beliActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txt_beliActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txt_beliActionPerformed
-
-public void populateStatusComboBox() {
-    try {
-        // Koneksi ke database
-        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/brobets", "root", "");
-
-        // Query untuk mengambil status unik dari tabel barang
-        String query = "SELECT DISTINCT status FROM barang";
-        PreparedStatement stmt = con.prepareStatement(query);
-        ResultSet rs = stmt.executeQuery();
-
-        // Set untuk menyimpan status agar tidak duplikat
-        Set<String> statusSet = new HashSet<>();
-
-        // Menghapus item lama
-        cmb_status1.removeAllItems();
-
-        // Tambah status dari database
-        while (rs.next()) {
-            String status = rs.getString("status");
-            if (status != null) {
-                status = status.trim();
-                if (!status.isEmpty() && !statusSet.contains(status)) {
-                    statusSet.add(status);
-                    cmb_status1.addItem(status);
-                    System.out.println("Menambahkan status dari DB: '" + status + "'");
-                }
-            }
-        }
-
-        // Tambahkan status manual sebagai cadangan
-        String[] manualStatuses = { "Rusak", "Hilang", "Maintenance"};
-        for (String manualStatus : manualStatuses) {
-            if (!statusSet.contains(manualStatus)) {
-                statusSet.add(manualStatus);
-                cmb_status1.addItem(manualStatus);
-                System.out.println("Menambahkan status manual: '" + manualStatus + "'");
-            }
-        }
-
-        // Tutup koneksi
-        rs.close();
-        stmt.close();
-        con.close();
-
-    } catch (SQLException ex) {
-        JOptionPane.showMessageDialog(this, "Kesalahan database: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-
-    
-    
-    
+        
     private void btn_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_updateActionPerformed
      String newNamaBarang = txt_nama1.getText().trim();
         String newKategori = txt_kategori1.getText().trim();

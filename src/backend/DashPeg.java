@@ -345,11 +345,15 @@ public class DashPeg extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_dashMouseEntered
 
     private void btn_barangMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_barangMouseEntered
+       if (activePanel != btn_barang) {
         ((panel_custom) btn_barang).setDynamicSize(200, btn_barang.getHeight());
+    }
     }//GEN-LAST:event_btn_barangMouseEntered
 
     private void btn_barangMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_barangMouseExited
+        if (activePanel != btn_barang) {
         ((panel_custom) btn_barang).setDynamicSize(180, btn_barang.getHeight());
+         }
     }//GEN-LAST:event_btn_barangMouseExited
 
     private void btn_pelangganMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_pelangganMouseEntered

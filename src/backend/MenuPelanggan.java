@@ -25,6 +25,7 @@ public class MenuPelanggan extends javax.swing.JPanel {
     model.addColumn("No HP");
     model.addColumn("Poin");
     model.addColumn("Status");
+    model.addColumn("Status Reward");
 
     jTable_custom1.setModel(model);
 
@@ -42,7 +43,8 @@ public class MenuPelanggan extends javax.swing.JPanel {
                 rs.getString("nama_pelanggan"),
                 rs.getString("no_hp"),
                 rs.getInt("poin"),
-                rs.getString("status")
+                rs.getString("status"),
+                rs.getString("status_reward")
             });
         }
 

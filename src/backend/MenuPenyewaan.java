@@ -28,9 +28,10 @@ public class MenuPenyewaan extends javax.swing.JPanel {
     PreparedStatement pst;
     ResultSet rs;
     
-    boolean pelangganLama = false;
+   boolean pelangganLama = false;
     String idPelangganLama = "";
     int poinSekarang = 0;
+
 
     
     public MenuPenyewaan() {
@@ -64,7 +65,7 @@ public class MenuPenyewaan extends javax.swing.JPanel {
     private void load_table() {
     DefaultTableModel model = new DefaultTableModel();
     model.addColumn("ID Sewa");
-    model.addColumn("ID Pelanggan");
+    model.addColumn("Nama Pelanggan");
     model.addColumn("ID Pengguna");
     model.addColumn("Tanggal Sewa");
     model.addColumn("Tanggal Rencana Kembali");
@@ -75,27 +76,27 @@ public class MenuPenyewaan extends javax.swing.JPanel {
     model.addColumn("Status");
 
     try {
-        String sql = "SELECT * FROM penyewaan ORDER BY id_sewa DESC";
-        pst = con.prepareStatement(sql);
-        rs = pst.executeQuery();
+     String sql = "SELECT penyewaan.*, pelanggan.nama_pelanggan FROM penyewaan JOIN pelanggan "
+                + "ON penyewaan.id_pelanggan = pelanggan.id_pelanggan ORDER BY penyewaan.id_sewa DESC;";
+     pst = con.prepareStatement(sql);
+     rs = pst.executeQuery();
 
-        while (rs.next()) {
-            model.addRow(new Object[]{
-                rs.getString(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4),
-                rs.getString(5),
-                rs.getString(6),
-                rs.getString(7),
-                rs.getString(8),
-                rs.getString(9),
-                rs.getString(10)
-            });
-        }
+     while (rs.next()) {
+         model.addRow(new Object[]{
+             rs.getString("id_sewa"),             
+             rs.getString("nama_pelanggan"),  
+             rs.getString("id_pengguna"),                    
+             rs.getString("tgl_sewa"),                     
+             rs.getString("tgl_rencana_kembali"),                     
+             rs.getString("total_harga"),                     
+             rs.getString("bayar"),                       
+             rs.getString("kembalian"),                      
+             rs.getString("jaminan"),                      
+             rs.getString("status"),             
+         });
+     }
 
-        table_sewa.setModel(model);
-
+     table_sewa.setModel(model);
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
     }
@@ -113,7 +114,7 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         table_barang.setModel(model);      
     }
     
-     private void CekDanHitungKembalian() { //fungsi untuk mengecek dan menghitung kembalian
+     private void CekDanHitungKembalian() {
         try {
             String bayarText = txt_bayar.getText().replace("Rp ", "").replace(",", "").replaceAll("[^\\d]", "");
             String totalText = txt_total.getText().replace("Rp ", "").replace(",", "").replaceAll("[^\\d]", "");
@@ -165,21 +166,54 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         }
     }
 
-
+   private int getPoinCustomer(String idPelanggan) {
+    int poin = 0;
+    try {
+        String sql = "SELECT poin FROM pelanggan WHERE id_pelanggan = ?";
+        pst = con.prepareStatement(sql);
+        pst.setString(1, idPelanggan);
+        rs = pst.executeQuery();
+        if (rs.next()) {
+            poin = rs.getInt("poin");
+        }
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, "Gagal ambil poin: " + e.getMessage());
+    }
+    return poin;
+}
+   
+    // ===================== CEK Tenda GRATIS sudah ditambahkan =====================
+    private boolean isTendaSudahDitambahkan(DefaultTableModel model) {
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String namaBarang = model.getValueAt(i, 1).toString().toLowerCase();
+            double harga = Double.parseDouble(model.getValueAt(i, 3).toString());
+            if (namaBarang.contains("tenda") && harga == 0.0) {
+                return true;
+            }
+        }
+        return false;
+    }
+     
+     
+    // ===================== HITUNG TOTAL HARGA =====================
     private void hitungTotalHarga() {
         double total = 0.0;
-
         DefaultTableModel model = (DefaultTableModel) table_barang.getModel();
         for (int i = 0; i < model.getRowCount(); i++) {
-            double subtotal = Double.parseDouble(model.getValueAt(i, 4).toString()); // kolom subtotal (index ke-4)
+            double subtotal = Double.parseDouble(model.getValueAt(i, 4).toString()); // kolom subtotal index 4
             total += subtotal;
         }
-
-        txt_total.setText("Rp " + String.format("%,.0f", total)); // Contoh label tampilan total
+        txt_total.setText("Rp " + String.format("%,.0f", total));
     }
-    
+
     public void cekPelanggan() {
-    String nama = nama_penyewa.getText();
+    String nama = nama_penyewa.getText().trim();
+    if (nama.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Isi nama pelanggan terlebih dahulu.");
+        pelangganLama = false;
+        return;
+    }
+
     try {
         String query = "SELECT * FROM pelanggan WHERE nama_pelanggan = ?";
         PreparedStatement ps = con.prepareStatement(query);
@@ -187,28 +221,33 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         ResultSet rs = ps.executeQuery();
 
         if (rs.next()) {
-            String status = rs.getString("status"); // Asumsikan kolom 'status' di tabel pelanggan
+            String status = rs.getString("status"); // contoh kolom status pelanggan
 
             if ("nonaktif".equalsIgnoreCase(status)) {
                 JOptionPane.showMessageDialog(this, "Pelanggan ditemukan, namun statusnya NONAKTIF.\nAktifkan akun terlebih dahulu untuk melakukan sewa.");
                 pelangganLama = false;
-                return; // Keluar dari method agar proses tidak lanjut
+                return;
             }
 
-            // Jika pelanggan aktif
+            // Pelanggan aktif
             no_hp.setText(rs.getString("no_hp"));
-            JOptionPane.showMessageDialog(this, "Pelanggan lama ditemukan dan aktif.");
             pelangganLama = true;
             idPelangganLama = rs.getString("id_pelanggan");
             poinSekarang = rs.getInt("poin");
 
+            JOptionPane.showMessageDialog(this, "Pelanggan lama ditemukan dan aktif.\nPoin saat ini: " + poinSekarang);
         } else {
-            JOptionPane.showMessageDialog(this, "Pelanggan baru ditemukan.");
+            // Pelanggan baru
             pelangganLama = false;
+            idPelangganLama = "";
+            poinSekarang = 0;
+            no_hp.setText("");
+            JOptionPane.showMessageDialog(this, "Pelanggan baru ditemukan.");
         }
     } catch (Exception e) {
         e.printStackTrace();
         JOptionPane.showMessageDialog(this, "Error saat cek pelanggan: " + e.getMessage());
+        pelangganLama = false;
     }
 }
 
@@ -969,14 +1008,19 @@ public class MenuPenyewaan extends javax.swing.JPanel {
 
     private void btn_simpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_simpanActionPerformed
     try {
+        if (nama_penyewa.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Isi nama penyewa dulu dan cek pelanggan!");
+            return;
+        }
+
+        // ID Pelanggan sesuai status pelangganLama
         String idPelanggan = pelangganLama ? idPelangganLama : generateID("pelanggan", "id_pelanggan", "PL");
         String idSewa = generateID("penyewaan", "id_sewa", "PN");
-        String idKembali = generateID("pengembalian", "id_kembali", "PM");
 
-        String namaPenyewa = nama_penyewa.getText();
-        String tglPinjam = tgl_pinjam.getText();
-        String tglKembali = tgl_kembali.getText();
-        String noHp = no_hp.getText();
+        String namaPenyewa = nama_penyewa.getText().trim();
+        String tglPinjam = tgl_pinjam.getText().trim();
+        String tglKembali = tgl_kembali.getText().trim();
+        String noHp = no_hp.getText().trim();
 
         String bayarStr = txt_bayar.getText().replace("Rp", "").replace(".", "").replaceAll("\\s+", "");
         String kembalianStr = txt_kembalian.getText().replace("Rp", "").replace(".", "").replaceAll("\\s+", "");
@@ -989,116 +1033,116 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         else if (cek_ktm.isSelected()) jaminan = "KTM";
         else if (cek_fckk.isSelected()) jaminan = "FC KK";
 
-        // Hitung total harga
+        // Hitung total harga dan cek reward dipakai
+        DefaultTableModel model = (DefaultTableModel) table_barang.getModel();
         double totalHarga = 0;
-        double hargaTenda = 0;  // harga 1 tenda untuk reward
-        boolean adaTenda = false;
-
-        for (int i = 0; i < table_barang.getRowCount(); i++) {
-            int qty = Integer.parseInt(table_barang.getValueAt(i, 2).toString());
-            double harga = Double.parseDouble(table_barang.getValueAt(i, 3).toString());
+        boolean rewardDipakai = false;
+        for (int i = 0; i < model.getRowCount(); i++) {
+            int qty = Integer.parseInt(model.getValueAt(i, 2).toString());
+            double harga = Double.parseDouble(model.getValueAt(i, 3).toString());
             totalHarga += qty * harga;
 
-            // Cek apakah ada tenda untuk reward
-            String namaBarang = table_barang.getValueAt(i, 1).toString().toLowerCase();
-            if (!adaTenda && namaBarang.contains("tenda")) {
-                hargaTenda = harga;  // simpan harga tenda pertama
-                adaTenda = true;
+            String namaBarang = model.getValueAt(i, 1).toString().toLowerCase();
+            if (namaBarang.contains("tenda") && harga == 0.0) {
+                rewardDipakai = true;
             }
         }
 
-        // =========================== PELANGGAN BARU ===============================
+        // =================== PELANGGAN BARU ===================
         if (!pelangganLama) {
-            int poin = totalHarga >= 50000 ? 1 : 0;
-            String statusReward = poin == 5 ? "tersedia" : "tidak tersedia";
+            int poin = (totalHarga >= 50000) ? 1 : 0;
+            String statusReward = (poin >= 5) ? "tersedia" : "tidak tersedia";
 
-            String sqlPelanggan = "INSERT INTO pelanggan (id_pelanggan, nama_pelanggan, no_hp, poin, status_reward) VALUES (?, ?, ?, ?, ?)";
+            String sqlPelanggan = "INSERT INTO pelanggan (id_pelanggan, nama_pelanggan, no_hp, poin, status_reward, status) VALUES (?, ?, ?, ?, ?, ?)";
             PreparedStatement psPelanggan = con.prepareStatement(sqlPelanggan);
             psPelanggan.setString(1, idPelanggan);
             psPelanggan.setString(2, namaPenyewa);
             psPelanggan.setString(3, noHp);
             psPelanggan.setInt(4, poin);
             psPelanggan.setString(5, statusReward);
+            psPelanggan.setString(6, "aktif");
             psPelanggan.executeUpdate();
+
+            pelangganLama = true;
+            idPelangganLama = idPelanggan;
+            poinSekarang = poin;
+
+            JOptionPane.showMessageDialog(this, "Pelanggan baru berhasil ditambahkan dengan poin " + poin);
         }
-        // =========================== PELANGGAN LAMA ===============================
-        else {
-            // Ambil status reward
-            String sqlCheckReward = "SELECT status_reward FROM pelanggan WHERE id_pelanggan = ?";
-            PreparedStatement psCheck = con.prepareStatement(sqlCheckReward);
-            psCheck.setString(1, idPelanggan);
-            ResultSet rs = psCheck.executeQuery();
-            String statusReward = "tidak tersedia";
-            if (rs.next()) {
-                statusReward = rs.getString("status_reward");
-            }
 
-            if (poinSekarang >= 5 && statusReward.equals("tersedia") && adaTenda) {
-                totalHarga -= hargaTenda;  // Diskon tenda
-                JOptionPane.showMessageDialog(this, "Selamat! Anda mendapatkan 1x sewa tenda gratis.");
-
-                String sqlUpdate = "UPDATE pelanggan SET poin = 0, status_reward = 'sudah digunakan' WHERE id_pelanggan = ?";
-                PreparedStatement psUpdate = con.prepareStatement(sqlUpdate);
+        // =================== UPDATE POIN & STATUS REWARD UNTUK PELANGGAN LAMA ===================
+        if (pelangganLama) {
+            if (rewardDipakai) {
+                // Jika reward dipakai, reset poin dan update status_reward jadi 'sudah digunakan'
+                String updateReward = "UPDATE pelanggan SET poin = 0, status_reward = 'sudah digunakan' WHERE id_pelanggan = ?";
+                PreparedStatement psUpdate = con.prepareStatement(updateReward);
                 psUpdate.setString(1, idPelanggan);
                 psUpdate.executeUpdate();
-            } else if (totalHarga >= 50000) {
-                int newPoin = poinSekarang + 1;
-                String status = (newPoin == 5) ? "tersedia" : statusReward;
 
-                String sqlUpdate = "UPDATE pelanggan SET poin = ?, status_reward = ? WHERE id_pelanggan = ?";
-                PreparedStatement psUpdate = con.prepareStatement(sqlUpdate);
-                psUpdate.setInt(1, newPoin);
-                psUpdate.setString(2, status);
-                psUpdate.setString(3, idPelanggan);
-                psUpdate.executeUpdate();
+                poinSekarang = 0; // reset poin variabel lokal
+                JOptionPane.showMessageDialog(this, "Reward tenda gratis telah digunakan, poin direset.");
+            } else {
+                // Jika tidak pakai reward, tambah poin 1 jika total harga >= 50000
+                if (totalHarga >= 50000) {
+                    poinSekarang += 1;
+
+                    // Update poin di DB, dan update status_reward jika poin >= 5
+                    String statusReward = (poinSekarang >= 5) ? "tersedia" : "tidak tersedia";
+                    String updatePoin = "UPDATE pelanggan SET poin = ?, status_reward = ? WHERE id_pelanggan = ?";
+                    PreparedStatement psUpdatePoin = con.prepareStatement(updatePoin);
+                    psUpdatePoin.setInt(1, poinSekarang);
+                    psUpdatePoin.setString(2, statusReward);
+                    psUpdatePoin.setString(3, idPelanggan);
+                    psUpdatePoin.executeUpdate();
+
+                    JOptionPane.showMessageDialog(this, "Poin berhasil ditambahkan. Poin sekarang: " + poinSekarang);
+                }
             }
         }
 
-        // ========================== SIMPAN PENYEWAAN ==============================
-        String sqlSewa = "INSERT INTO penyewaan (id_sewa, id_pelanggan, id_pengguna, tgl_sewa, tgl_rencana_kembali, total_harga, bayar, kembalian, jaminan, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // =================== SIMPAN DATA PENYEWAAN ===================
+        String sqlSewa = "INSERT INTO penyewaan (id_sewa, id_pelanggan, tgl_sewa, tgl_kembali, jaminan, total_bayar, bayar, kembalian) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement psSewa = con.prepareStatement(sqlSewa);
         psSewa.setString(1, idSewa);
         psSewa.setString(2, idPelanggan);
-        psSewa.setString(3, Session.getIdPengguna());
-        psSewa.setString(4, tglPinjam);
-        psSewa.setString(5, tglKembali);
-        psSewa.setInt(6, (int) Math.round(totalHarga));
+        psSewa.setString(3, tglPinjam);
+        psSewa.setString(4, tglKembali);
+        psSewa.setString(5, jaminan);
+        psSewa.setDouble(6, totalHarga);
         psSewa.setInt(7, bayar);
         psSewa.setInt(8, kembalian);
-        psSewa.setString(9, jaminan);
-        psSewa.setString(10, "Belum Kembali");
         psSewa.executeUpdate();
 
-        for (int i = 0; i < table_barang.getRowCount(); i++) {
-            String idBarang = table_barang.getValueAt(i, 0).toString();
-            int qty = Integer.parseInt(table_barang.getValueAt(i, 2).toString());
-            double harga = Double.parseDouble(table_barang.getValueAt(i, 3).toString());
-            double subTotal = qty * harga;
-
-            String idDetail = generateID("detail_sewa", "id_detail", "DTS");
-            String sqlDetail = "INSERT INTO detail_sewa (id_detail, id_sewa, id_barang, qty, sub_total) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement psDetail = con.prepareStatement(sqlDetail);
-            psDetail.setString(1, idDetail);
-            psDetail.setString(2, idSewa);
-            psDetail.setString(3, idBarang);
-            psDetail.setInt(4, qty);
-            psDetail.setDouble(5, subTotal);
-            psDetail.executeUpdate();
+        // =================== SIMPAN DETAIL BARANG DI PENYEWAAN ===================
+        String sqlDetail = "INSERT INTO detail_sewa (id_sewa, id_barang, qty, subtotal) VALUES (?, ?, ?, ?)";
+        PreparedStatement psDetail = con.prepareStatement(sqlDetail);
+        for (int i = 0; i < model.getRowCount(); i++) {
+            psDetail.setString(1, idSewa);
+            psDetail.setString(2, model.getValueAt(i, 0).toString());
+            psDetail.setInt(3, Integer.parseInt(model.getValueAt(i, 2).toString()));
+            psDetail.setDouble(4, Double.parseDouble(model.getValueAt(i, 4).toString()));
+            psDetail.addBatch();
         }
+        psDetail.executeBatch();
 
-        JOptionPane.showMessageDialog(this, "Transaksi berhasil disimpan!");
+        JOptionPane.showMessageDialog(this, "Transaksi penyewaan berhasil disimpan.");
 
-        page_main.removeAll();
-        page_main.add(page_penyewaan);
-        page_main.repaint();
-        page_main.revalidate();
-        load_table();
+        // Clear form dan reset variabel
+        nama_penyewa.setText("");
+        no_hp.setText("");
+        txt_total.setText("Rp 0");
+        txt_bayar.setText("");
+        txt_kembalian.setText("");
+        DefaultTableModel modelClear = (DefaultTableModel) table_barang.getModel();
+        modelClear.setRowCount(0);
+        poinSekarang = 0;
+        pelangganLama = false;
+        idPelangganLama = "";
 
     } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Gagal menyimpan: " + e.getMessage());
+        JOptionPane.showMessageDialog(this, "Gagal simpan transaksi: " + e.getMessage());
         e.printStackTrace();
     }
-
     }//GEN-LAST:event_btn_simpanActionPerformed
 
     private void txt_qtyFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txt_qtyFocusGained
@@ -1177,9 +1221,11 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         txt_total.setText("Rp " + total);
     }//GEN-LAST:event_txt_searchBrgActionPerformed
 
+
+
+    
     private void btn_tambah_barangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_tambah_barangActionPerformed
-        // TODO add your handling code here:
-        try {
+     try {
         String namaBarang = txt_nama.getText().trim();
         String qtyStr = txt_qty.getText().trim();
 
@@ -1194,7 +1240,6 @@ public class MenuPenyewaan extends javax.swing.JPanel {
             return;
         }
 
-        // Ambil id_barang dan harga dari DB
         String sql = "SELECT id_barang, harga_sewa, stok FROM barang WHERE nama_barang = ?";
         pst = con.prepareStatement(sql);
         pst.setString(1, namaBarang);
@@ -1202,7 +1247,7 @@ public class MenuPenyewaan extends javax.swing.JPanel {
 
         if (rs.next()) {
             String idBarang = rs.getString("id_barang");
-            double harga = rs.getDouble("harga_sewa");
+            int harga = rs.getInt("harga_sewa");   // pakai int
             int stok = rs.getInt("stok");
 
             if (qtyInt > stok) {
@@ -1218,7 +1263,7 @@ public class MenuPenyewaan extends javax.swing.JPanel {
                 if (idTabel.equals(idBarang)) {
                     int qtyLama = Integer.parseInt(model.getValueAt(i, 2).toString());
                     int qtyBaru = qtyLama + qtyInt;
-                    double subTotalBaru = harga * qtyBaru;
+                    int subTotalBaru = harga * qtyBaru;   // pakai int
 
                     model.setValueAt(qtyBaru, i, 2);
                     model.setValueAt(subTotalBaru, i, 4);
@@ -1228,16 +1273,36 @@ public class MenuPenyewaan extends javax.swing.JPanel {
             }
 
             if (!barangSudahAda) {
-                double subTotal = qtyInt * harga;
+                int subTotal = qtyInt * harga;   // pakai int
                 model.addRow(new Object[]{idBarang, namaBarang, qtyInt, harga, subTotal});
             }
 
-            hitungTotalHarga(); // Jika ada
+            // CEK & TAMBAH REWARD Tenda Gratis jika poin >= 5 dan belum dipakai
+            if (pelangganLama) {
+                if (poinSekarang >= 5 && !isTendaSudahDitambahkan(model)) {
+                    int jawab = JOptionPane.showConfirmDialog(null,
+                        "Jumlah poin Anda: " + poinSekarang + "\n Mendapatkan 1x sewa tenda GRATIS!\nGunakan sekarang?",
+                        "Reward Tersedia",
+                        JOptionPane.YES_NO_OPTION);
+
+                    if (jawab == JOptionPane.YES_OPTION) {
+                        String sqlTenda = "SELECT id_barang, nama_barang FROM barang WHERE nama_barang LIKE '%tenda%'";
+                        pst = con.prepareStatement(sqlTenda);
+                        rs = pst.executeQuery();
+                        if (rs.next()) {
+                            String idTenda = rs.getString("id_barang");
+                            String namaTenda = rs.getString("nama_barang");
+                            model.addRow(new Object[]{idTenda, namaTenda, 1, 0, 0});
+                            JOptionPane.showMessageDialog(null, "Tenda gratis berhasil ditambahkan!");
+                        }
+                    }
+                }
+            }
+
+            hitungTotalHarga();
             txt_nama.setText("");
             txt_qty.setText("");
             txt_searchBrg.setText("");
-            
-            JOptionPane.showMessageDialog(null, "Barang berhasil ditambahkan!");
         } else {
             JOptionPane.showMessageDialog(null, "Barang tidak ditemukan!");
         }
@@ -1245,7 +1310,6 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         JOptionPane.showMessageDialog(null, "Terjadi kesalahan: " + e.getMessage());
         e.printStackTrace();
     }
-
     }//GEN-LAST:event_btn_tambah_barangActionPerformed
 
     private void btn_hapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_hapusActionPerformed
