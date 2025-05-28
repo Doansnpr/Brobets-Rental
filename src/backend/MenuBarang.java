@@ -238,8 +238,8 @@ public class EnumComboBoxLoader {
         jLabel12 = new javax.swing.JLabel();
         jLabel26 = new javax.swing.JLabel();
         jLabel27 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        tbl_barang = new custom.JTable_custom();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        tbl_barang = new custom.JTable_customAutoresize();
         page_tambah = new javax.swing.JPanel();
         jLabel28 = new javax.swing.JLabel();
         jLabel29 = new javax.swing.JLabel();
@@ -358,22 +358,18 @@ public class EnumComboBoxLoader {
 
         tbl_barang.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "ID Barang", "Nama Barang", "Harga Sewa", "Harga Beli", "Kategori", "Stok", "Status"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane1.setViewportView(tbl_barang);
+        jScrollPane2.setViewportView(tbl_barang);
 
-        page_barang.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 250, 730, 360));
+        page_barang.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(42, 240, 750, 390));
 
         page_main.add(page_barang, "card2");
 
@@ -1155,12 +1151,12 @@ public class EnumComboBoxLoader {
     private javax.swing.JLabel jLabel34;
     private javax.swing.JLabel jLabel35;
     private javax.swing.JLabel jLabel6;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPanel page_barang;
     private javax.swing.JPanel page_main;
     private javax.swing.JPanel page_tambah;
     private javax.swing.JPanel page_ubah;
-    private custom.JTable_custom tbl_barang;
+    private custom.JTable_customAutoresize tbl_barang;
     private javax.swing.JTextField txt_beli;
     private javax.swing.JTextField txt_beli1;
     private javax.swing.JTextField txt_harga;

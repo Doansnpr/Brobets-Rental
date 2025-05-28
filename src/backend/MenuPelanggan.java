@@ -177,8 +177,8 @@ public class MenuPelanggan extends javax.swing.JPanel {
         jLabel12 = new javax.swing.JLabel();
         jLabel26 = new javax.swing.JLabel();
         label_username = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTable_custom1 = new custom.JTable_custom();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTable_custom1 = new custom.JTable_customAutoresize();
 
         setLayout(new java.awt.CardLayout());
 
@@ -259,20 +259,15 @@ public class MenuPelanggan extends javax.swing.JPanel {
                 {null, null, null, null},
                 {null, null, null, null},
                 {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
                 {null, null, null, null}
             },
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane1.setViewportView(jTable_custom1);
+        jScrollPane2.setViewportView(jTable_custom1);
 
-        page_penyewaan.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 200, 730, 400));
+        page_penyewaan.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 200, 760, -1));
 
         page_main.add(page_penyewaan, "card2");
 
@@ -310,8 +305,8 @@ public class MenuPelanggan extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel25;
     private javax.swing.JLabel jLabel26;
-    private javax.swing.JScrollPane jScrollPane1;
-    private custom.JTable_custom jTable_custom1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private custom.JTable_customAutoresize jTable_custom1;
     private javax.swing.JLabel label_username;
     private javax.swing.JPanel page_main;
     private javax.swing.JPanel page_penyewaan;

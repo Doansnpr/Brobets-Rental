@@ -59,8 +59,8 @@ public class MenuUser extends javax.swing.JPanel {
         jLabel12 = new javax.swing.JLabel();
         jLabel26 = new javax.swing.JLabel();
         label_username = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        tb_user = new custom.JTable_custom();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        tb_user = new custom.JTable_customAutoresize();
         page_tambah = new javax.swing.JPanel();
         jLabel28 = new javax.swing.JLabel();
         jLabel29 = new javax.swing.JLabel();
@@ -180,26 +180,18 @@ public class MenuUser extends javax.swing.JPanel {
 
         tb_user.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, ""},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "ID", "Nama", "Email", "Alamat", "No_HP", "Username", "Role", "Password"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
-            };
+        ));
+        jScrollPane2.setViewportView(tb_user);
 
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        jScrollPane1.setViewportView(tb_user);
-
-        page_user.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 250, 730, 370));
+        page_user.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 240, 760, 390));
 
         page_main.add(page_user, "card2");
 
@@ -972,7 +964,7 @@ public class MenuUser extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel34;
     private javax.swing.JLabel jLabel35;
     private javax.swing.JLabel jLabel6;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JLabel label_username;
@@ -982,7 +974,7 @@ public class MenuUser extends javax.swing.JPanel {
     private javax.swing.JPanel page_user;
     private javax.swing.JRadioButton rbAdmin;
     private javax.swing.JRadioButton rbPegawai;
-    private custom.JTable_custom tb_user;
+    private custom.JTable_customAutoresize tb_user;
     private javax.swing.JTextArea txt_alamat;
     private javax.swing.JTextArea txt_alamat1;
     private javax.swing.JTextField txt_email;

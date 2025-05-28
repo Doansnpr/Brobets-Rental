@@ -23,6 +23,8 @@ public class JTable_custom extends JTable {
         setGridColor(new Color(230, 230, 230));
         setRowHeight(40);
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
 
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
@@ -39,19 +41,22 @@ public class JTable_custom extends JTable {
         setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
+                boolean isSelected, boolean hasFocus, int row, int column) {
                 Component com = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                com.setBackground(Color.WHITE);
                 setBorder(noFocusBorder);
+
                 if (isSelected) {
-                    com.setForeground(new Color(15, 151, 89, 121));
-                    com.setBackground(new Color(204, 114, 204, 121));
+                    com.setBackground(new Color(204, 153, 255));
+                    com.setForeground(Color.BLACK);
                 } else {
-                    com.setForeground(new Color(140, 111, 102, 112));
+                    com.setBackground(Color.WHITE);
+                    com.setForeground(Color.BLACK); 
                 }
+
                 return com;
             }
         });
+
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -80,7 +85,8 @@ public class JTable_custom extends JTable {
             setBackground(new Color(228, 88, 88));
             setFont(new Font("SansSerif", Font.PLAIN, 12));
             setForeground(new Color(0, 0, 0));
-            setBorder(new EmptyBorder(10, 10, 10, 5));
+            setBorder(new EmptyBorder(5, 10, 5, 10)); // jangan terlalu besar
+
         }
 
         @Override
