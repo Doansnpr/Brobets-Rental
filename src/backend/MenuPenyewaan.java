@@ -18,6 +18,8 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.print.Paper;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -28,6 +30,9 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 
 public class MenuPenyewaan extends javax.swing.JPanel {
@@ -36,12 +41,11 @@ public class MenuPenyewaan extends javax.swing.JPanel {
     PreparedStatement pst;
     ResultSet rs;
     
-   boolean pelangganLama = false;
+    boolean pelangganLama = false;
     String idPelangganLama = "";
     int poinSekarang = 0;
 
-
-    
+ 
     public MenuPenyewaan() {
         initComponents();
         Koneksi DB = new Koneksi();
@@ -52,27 +56,28 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         label_username.setText(Login.Session.getUsername());
         label_username2.setText(Login.Session.getUsername());
         label_username3.setText(Login.Session.getUsername());
+        setupBarcodeScannerListener();
+        autoSearch();
         
     }
     
     private String generateID(String tableName, String idColumn, String prefix) {
-    String newID = prefix + "001";
-    try {
-        String sql = "SELECT " + idColumn + " FROM " + tableName + " ORDER BY " + idColumn + " DESC LIMIT 1";
-        pst = con.prepareStatement(sql);
-        rs = pst.executeQuery();
-        if (rs.next()) {
-            String lastID = rs.getString(1);
-            int num = Integer.parseInt(lastID.substring(prefix.length())) + 1;
-            newID = prefix + String.format("%03d", num);
+        String newID = prefix + "001";
+        try {
+            String sql = "SELECT " + idColumn + " FROM " + tableName + " ORDER BY " + idColumn + " DESC LIMIT 1";
+            pst = con.prepareStatement(sql);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                String lastID = rs.getString(1);
+                int num = Integer.parseInt(lastID.substring(prefix.length())) + 1;
+                newID = prefix + String.format("%03d", num);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Gagal generate ID: " + e.getMessage());
         }
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(null, "Gagal generate ID: " + e.getMessage());
+        return newID;
     }
-    return newID;
-}
     
-
     private void load_table() {
     DefaultTableModel model = new DefaultTableModel();
     model.addColumn("ID Sewa");
@@ -107,23 +112,22 @@ public class MenuPenyewaan extends javax.swing.JPanel {
          });
      }
 
-     table_sewa.setModel(model);
+        table_sewa.setModel(model);
 
-    table_sewa.getColumnModel().getColumn(0).setPreferredWidth(80);
-    table_sewa.getColumnModel().getColumn(1).setPreferredWidth(120);
-    table_sewa.getColumnModel().getColumn(2).setPreferredWidth(120);
-    table_sewa.getColumnModel().getColumn(3).setPreferredWidth(100);
-    table_sewa.getColumnModel().getColumn(4).setPreferredWidth(170);
-    table_sewa.getColumnModel().getColumn(5).setPreferredWidth(100);
-    table_sewa.getColumnModel().getColumn(6).setPreferredWidth(80);
-    table_sewa.getColumnModel().getColumn(7).setPreferredWidth(90);
-    table_sewa.getColumnModel().getColumn(8).setPreferredWidth(90);
-    table_sewa.getColumnModel().getColumn(9).setPreferredWidth(100);
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+        table_sewa.getColumnModel().getColumn(0).setPreferredWidth(80);
+        table_sewa.getColumnModel().getColumn(1).setPreferredWidth(120);
+        table_sewa.getColumnModel().getColumn(2).setPreferredWidth(120);
+        table_sewa.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table_sewa.getColumnModel().getColumn(4).setPreferredWidth(170);
+        table_sewa.getColumnModel().getColumn(5).setPreferredWidth(100);
+        table_sewa.getColumnModel().getColumn(6).setPreferredWidth(80);
+        table_sewa.getColumnModel().getColumn(7).setPreferredWidth(90);
+        table_sewa.getColumnModel().getColumn(8).setPreferredWidth(90);
+        table_sewa.getColumnModel().getColumn(9).setPreferredWidth(100);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+        }
     }
-}
-
     
     private void load_tableBrg() {
         DefaultTableModel model = new DefaultTableModel();
@@ -136,7 +140,7 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         table_barang.setModel(model);      
     }
     
-     private void CekDanHitungKembalian() {
+    private void CekDanHitungKembalian() {
         try {
             String bayarText = txt_bayar.getText().replace("Rp ", "").replace(",", "").replaceAll("[^\\d]", "");
             String totalText = txt_total.getText().replace("Rp ", "").replace(",", "").replaceAll("[^\\d]", "");
@@ -160,7 +164,7 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         }
     }
      
-     private void Kembalian() {
+    private void Kembalian() {
         try {
             String totalText = txt_total.getText().replace("Rp ", "").replace(",", "").replaceAll("[^\\d]", "");
             String bayarText = txt_bayar.getText().replace("Rp ", "").replace(",", "").replaceAll("[^\\d]", "");
@@ -388,7 +392,6 @@ public class MenuPenyewaan extends javax.swing.JPanel {
       previewFrame.setVisible(true);
   }
 
-   
     private void cetakStruk(String isiStruk, String ucapan) {
     try {
         BufferedImage logo = ImageIO.read(getClass().getResource("/assets/logo (2).png"));
@@ -507,11 +510,165 @@ public class MenuPenyewaan extends javax.swing.JPanel {
         JOptionPane.showMessageDialog(null, "Gagal mencetak: " + e.getMessage());
     }
 }
-
-
-
     
+    private void processBarcode() {
+        String scannedKode = txt_barcode.getText().trim();
+        if (scannedKode.isEmpty()) return;
 
+        try {
+            String sql = "SELECT * FROM barang WHERE barcode = ?";
+            pst = con.prepareStatement(sql);
+            pst.setString(1, scannedKode);
+            rs = pst.executeQuery();
+
+            if (rs.next()) {
+                String idBarang = rs.getString("id_barang");
+                String namaBarang = rs.getString("nama_barang");
+                int harga = rs.getInt("harga_sewa");
+                int stok = rs.getInt("stok");
+
+                String qtyStr = JOptionPane.showInputDialog(null, "Masukkan jumlah untuk " + namaBarang + ":", "Jumlah Barang", JOptionPane.QUESTION_MESSAGE);
+                if (qtyStr == null || qtyStr.trim().isEmpty()) return;
+
+                int qty = Integer.parseInt(qtyStr.trim());
+
+                if (qty <= 0) {
+                    JOptionPane.showMessageDialog(null, "Jumlah harus lebih dari 0!");
+                    return;
+                }
+
+                if (qty > stok) {
+                    JOptionPane.showMessageDialog(null, "Stok tidak mencukupi! Tersedia: " + stok);
+                    return;
+                }
+
+                DefaultTableModel model = (DefaultTableModel) table_barang.getModel();
+                boolean barangSudahAda = false;
+
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    String idTabel = model.getValueAt(i, 0).toString();
+                    if (idTabel.equals(idBarang)) {
+                        int qtyLama = Integer.parseInt(model.getValueAt(i, 2).toString());
+                        int qtyBaru = qtyLama + qty;
+                        double subTotalBaru = harga * qtyBaru;
+
+                        model.setValueAt(qtyBaru, i, 2);
+                        model.setValueAt(subTotalBaru, i, 4);
+                        barangSudahAda = true;
+                        break;
+                    }
+                }
+
+                if (!barangSudahAda) {
+                    double subTotal = qty * harga;
+                    model.addRow(new Object[]{idBarang, namaBarang, qty, harga, subTotal});
+                }
+
+                hitungTotalHarga();
+                txt_barcode.setText("");
+
+            } else {
+                JOptionPane.showMessageDialog(null, "Barang tidak ditemukan!");
+            }
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Jumlah harus berupa angka!");
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Database Error: " + e.getMessage());
+        }
+    }
+
+    private void setupBarcodeScannerListener() {
+        txt_barcode.getDocument().addDocumentListener(new DocumentListener() {
+            private Timer timer = new Timer(300, new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    processBarcode();
+                }
+            });
+
+            public void changedUpdate(DocumentEvent e) {
+                restartTimer();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                restartTimer();
+            }
+
+            public void insertUpdate(DocumentEvent e) {
+                restartTimer();
+            }
+
+            private void restartTimer() {
+                timer.setRepeats(false);
+                timer.restart();
+            }
+        });
+    }
+
+    private void cariPenyewaan() {
+        String keyword = txt_search.getText().trim();
+
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("ID Sewa");
+        model.addColumn("Nama Penyewa");
+        model.addColumn("Nama Pegawai");
+        model.addColumn("Tanggal Sewa");
+        model.addColumn("Tanggal Rencana Kembali");
+        model.addColumn("Total Harga");
+        model.addColumn("Bayar");
+        model.addColumn("Kembalian");
+        model.addColumn("Jaminan");
+        model.addColumn("Status");
+
+        try {
+            Koneksi.config();
+            Connection con = Koneksi.getConnection();
+            String sql = "SELECT penyewaan.*, pengguna.nama_pengguna, pelanggan.nama_pelanggan FROM penyewaan JOIN pelanggan "
+                        + "ON penyewaan.id_pelanggan = pelanggan.id_pelanggan JOIN pengguna ON penyewaan.id_pengguna = pengguna.id_pengguna WHERE pelanggan.nama_pelanggan LIKE ?;";
+            pst = con.prepareStatement(sql);
+            pst.setString(1, "%" + keyword + "%");
+            rs = pst.executeQuery();
+
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                    rs.getString("id_sewa"),             
+                    rs.getString("nama_pelanggan"),  
+                    rs.getString("nama_pengguna"),                    
+                    rs.getString("tgl_sewa"),                     
+                    rs.getString("tgl_rencana_kembali"),                     
+                    rs.getString("total_harga"),                     
+                    rs.getString("bayar"),                       
+                    rs.getString("kembalian"),                      
+                    rs.getString("jaminan"),                      
+                    rs.getString("status"),
+                });
+            }
+
+            table_sewa.setModel(model);
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Gagal mencari data: " + e.getMessage());
+        }
+    }
+    
+    private void autoSearch(){
+        txt_search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                cariPenyewaan();
+            }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                cariPenyewaan();
+            }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                cariPenyewaan();
+            }
+        });
+    }
+    
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
